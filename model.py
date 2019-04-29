@@ -2,48 +2,50 @@ import torch
 import torch.nn as nn
 
 class LSTM(nn.Module):
-    def __init__(self, input_dim, hidden_dim, batch_size, output_dim, num_layers):
+    def __init__(self, input_dim, hidden_dim, batch_size, output_dim, num_layers, seq_len):
         super(LSTM, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.batch_size = batch_size
         self.output_dim = output_dim
         self.num_layers = num_layers
+        self.seq_len = seq_len
 
         # Define the LSTM layer
-#         self.lstm = nn.LSTMCell(self.input_dim, self.hidden_dim, self.num_layers, batch_first = True)
-        self.lstm_1 = nn.LSTMCell(self.input_dim, self.hidden_dim)
-        self.lstm_2 = nn.LSTMCell(self.hidden_dim, self.hidden_dim)
-#         self.hidden = self.init_hidden()
+        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, self.num_layers)
 
         # Define the output layer
-        self.linear = nn.Linear(self.hidden_dim, self.output_dim)
+        self.linear = nn.Linear(self.hidden_dim*self.seq_len, self.output_dim)
 
-#     def init_hidden(self):
-#         # This is what we'll initialise our hidden state as
-#         return (torch.zeros(self.batch_size, self.hidden_dim),
-#                 torch.zeros(self.batch_size, self.hidden_dim))
+    def init_hidden(self):
+        # This is what we'll initialise our hidden state as
+        return (torch.zeros(self.num_layers,self.batch_size, self.hidden_dim),
+                torch.zeros(self.num_layers,self.batch_size, self.hidden_dim))
 
     def forward(self, x):
+        
         outputs = []
-        for i, lstm_input in enumerate(x.chunk(round(x.size(0)/self.batch_size), dim=0)):
+        self.hidden = self.init_hidden()
+        
+        for i, lstm_input in enumerate(x.chunk(round(x.size(1)/self.batch_size), dim=1)):
             # Forward pass through LSTM layer
             # shape of lstm_out: [input_size, batch_size, hidden_dim]
-            # shape of self.hidden: (h, c), where a and b both 
+            # shape of self.hidden: (h, c), where h and c both 
             # have shape (num_layers, batch_size, hidden_dim).
-            if i == 0:
-                output_1, self.hidden = self.lstm_1(lstm_input)
-                output_2, self.hidden = self.lstm_1(output_1)
-                
-            output_1, self.hidden = self.lstm_1(lstm_input, self.hidden)
-            output_2, self.hidden = self.lstm_1(output_1, self.hidden)
-                
-            print(output.shape)
+ 
+            output, self.hidden = self.lstm(lstm_input, self.hidden)
             
-            # Only take the output from the final timetep
-            # Can pass on the entirety of lstm_out to the next layer if it is a seq2seq prediction
-#             y_pred = self.linear(output[-1].view(self.batch_size, -1))
-            y_pred = self.linear(output_2)
+            # Output from lstm is [seq_len, batch_size, hidden_dim], but for the linear's input we need
+            # [batch_size, hidden_dim*seq_len]. For this, we first swap the batch dimention with permute,
+            # and then we apply a flatten with the last 2 dimentions with view.
+            
+            input_linear = output.permute(1, 0, 2).contiguous()
+            input_linear = input_linear.view(self.batch_size,-1)    
+            y_pred = self.linear(input_linear)
             outputs += [y_pred]
-#         outputs = torch.stack(outputs).view(x.shape[0],-1,self.output_dim)
+            
+        # At the end, we just concatenate the predictions from the batch loop, and configure them to be 
+        # [full_input_dim, output_dim], using view.
+        
+        outputs = torch.stack(outputs).view(-1,self.output_dim)
         return outputs
