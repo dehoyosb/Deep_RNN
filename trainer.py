@@ -18,7 +18,7 @@ class Trainer(nn.Module):
         
     def learn(self, x_train, y_train):
         self.model.zero_grad()
-        y_pred = self.model(x_train)
+        y_pred = self.model(x_train, True)
         
         loss = self.criterion(y_pred.t(), y_train)
         
@@ -30,7 +30,7 @@ class Trainer(nn.Module):
     def evaluate(self, x_test, y_test):
         self.model.eval()
         with torch.no_grad():
-            y_pred = self.model(x_test)
+            y_pred = self.model(x_test, True)
             
         loss = self.criterion(y_pred.t(), y_test)
         self.model.train()
@@ -40,7 +40,7 @@ class Trainer(nn.Module):
         
         self.model.eval()
         with torch.no_grad():
-            y_pred = self.model(x)
+            y_pred = self.model(x, False)
         
         return y_pred.t()
         
