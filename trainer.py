@@ -34,4 +34,13 @@ class Trainer(nn.Module):
             
         loss = self.criterion(y_pred.t(), y_test)
         self.model.train()
-        return loss
+        return loss, y_pred.t()
+    
+    def predict(self, x):
+        
+        self.model.eval()
+        with torch.no_grad():
+            y_pred = self.model(x)
+        
+        return y_pred.t()
+        
