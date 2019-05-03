@@ -13,7 +13,7 @@ class Trainer(nn.Module):
                           output_dim, 
                           num_layers,
                          seq_len)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.optimizer = optim.Adadelta(self.model.parameters(), lr=learning_rate)
         self.criterion = nn.MSELoss()
         
     def learn(self, x_train, y_train):
