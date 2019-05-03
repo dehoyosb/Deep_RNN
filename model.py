@@ -12,10 +12,14 @@ class LSTM(nn.Module):
         self.seq_len = seq_len
 
         # Define the LSTM layer
-        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, self.num_layers)
+        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, self.num_layers, dropout = 0.2)
+        
+        self.drop_out = nn.Dropout(0.2)
 
         # Define the output layer
-        self.linear = nn.Linear(self.hidden_dim*self.seq_len, self.output_dim)
+        self.linear1 = nn.Linear(self.hidden_dim*self.seq_len, self.output_dim[0])
+        self.linear2 = nn.Linear(self.output_dim[0], self.output_dim[1])
+        self.linear3 = nn.Linear(self.output_dim[1], self.output_dim[2])
 
     def init_hidden(self):
         # This is what we'll initialise our hidden state as
@@ -42,17 +46,21 @@ class LSTM(nn.Module):
 
                 input_linear = output.permute(1, 0, 2).contiguous()
                 input_linear = input_linear.view(self.batch_size,-1)    
-                y_pred = self.linear(input_linear)
+                y_pred = self.linear1(input_linear)
+                y_pred = self.linear2(y_pred)
+                y_pred = self.linear3(y_pred)
                 outputs += [y_pred]
 
             # At the end, we just concatenate the predictions from the batch loop, and configure them to be 
             # [full_input_dim, output_dim], using view.
 
-            outputs = torch.stack(outputs).view(-1,self.output_dim)
+            outputs = torch.stack(outputs).view(-1,self.output_dim[2])
         else:
             output, self.hidden = self.lstm(x, self.hidden)
             input_linear = output.permute(1, 0, 2).contiguous()
             input_linear = input_linear.view(1,-1)    
-            outputs = self.linear(input_linear)
+            y_pred = self.linear1(input_linear)
+            y_pred = self.linear2(y_pred)
+            outputs = self.linear3(y_pred)
             
         return outputs
