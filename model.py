@@ -12,7 +12,7 @@ class LSTM(nn.Module):
         self.seq_len = seq_len
 
         # Define the LSTM layer
-        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, self.num_layers, dropout = 0.2)
+        self.lstm = nn.LSTM(self.input_dim, self.hidden_dim, self.num_layers, dropout = 0)
         
         self.drop_out = nn.Dropout(0.2)
 
