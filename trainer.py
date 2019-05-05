@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchcontrib
 
 from model import LSTM
 
@@ -14,6 +15,7 @@ class Trainer(nn.Module):
                           num_layers,
                          seq_len)
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.optimizer = torchcontrib.optim.SWA(self.optimizer, swa_start=10, swa_freq=5, swa_lr=0.05)
         self.criterion = nn.MSELoss()
         
     def learn(self, x_train, y_train):
