@@ -1,0 +1,11 @@
+# Don't track content of these folders
+# Compiled source #
+###################
+*.ipynb_checkpoints
+# Packages #
+############
+*.pkl
+# Data Files #
+##############
+*.csv
+*.xlsx
